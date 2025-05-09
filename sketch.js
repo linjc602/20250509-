@@ -4,6 +4,8 @@
 let video;
 let handPose;
 let hands = [];
+let circleX, circleY; // Circle position
+const circleSize = 100; // Circle size
 
 function preload() {
   // Initialize HandPose model with flipped video input
@@ -25,10 +27,19 @@ function setup() {
 
   // Start detecting hands
   handPose.detectStart(video, gotHands);
+
+  // Initialize circle position at the center of the canvas
+  circleX = width / 2;
+  circleY = height / 2;
 }
 
 function draw() {
   image(video, 0, 0);
+
+  // Draw the circle
+  fill(0, 0, 255, 150); // Semi-transparent blue
+  noStroke();
+  ellipse(circleX, circleY, circleSize);
 
   // Ensure at least one hand is detected
   if (hands.length > 0) {
@@ -49,48 +60,13 @@ function draw() {
           circle(keypoint.x, keypoint.y, 16);
         }
 
-        // Draw lines connecting keypoints
-        stroke(0, 255, 0); // Set line color
-        strokeWeight(2);
-
-        // Connect keypoints 0 to 4
-        for (let i = 0; i < 4; i++) {
-          line(
-            hand.keypoints[i].x, hand.keypoints[i].y,
-            hand.keypoints[i + 1].x, hand.keypoints[i + 1].y
-          );
-        }
-
-        // Connect keypoints 5 to 8
-        for (let i = 5; i < 8; i++) {
-          line(
-            hand.keypoints[i].x, hand.keypoints[i].y,
-            hand.keypoints[i + 1].x, hand.keypoints[i + 1].y
-          );
-        }
-
-        // Connect keypoints 9 to 12
-        for (let i = 9; i < 12; i++) {
-          line(
-            hand.keypoints[i].x, hand.keypoints[i].y,
-            hand.keypoints[i + 1].x, hand.keypoints[i + 1].y
-          );
-        }
-
-        // Connect keypoints 13 to 16
-        for (let i = 13; i < 16; i++) {
-          line(
-            hand.keypoints[i].x, hand.keypoints[i].y,
-            hand.keypoints[i + 1].x, hand.keypoints[i + 1].y
-          );
-        }
-
-        // Connect keypoints 17 to 20
-        for (let i = 17; i < 20; i++) {
-          line(
-            hand.keypoints[i].x, hand.keypoints[i].y,
-            hand.keypoints[i + 1].x, hand.keypoints[i + 1].y
-          );
+        // Check if the index finger (keypoint 8) touches the circle
+        let indexFinger = hand.keypoints[8];
+        let d = dist(indexFinger.x, indexFinger.y, circleX, circleY);
+        if (d < circleSize / 2) {
+          // Move the circle to the index finger's position
+          circleX = indexFinger.x;
+          circleY = indexFinger.y;
         }
       }
     }
