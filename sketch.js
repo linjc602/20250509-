@@ -6,6 +6,8 @@ let handPose;
 let hands = [];
 let circleX, circleY; // Circle position
 const circleSize = 100; // Circle size
+let isDragging = false; // Track if the circle is being dragged
+let trail = []; // Store the trail of the circle
 
 function preload() {
   // Initialize HandPose model with flipped video input
@@ -36,6 +38,14 @@ function setup() {
 function draw() {
   image(video, 0, 0);
 
+  // Draw the trail
+  noFill();
+  strokeWeight(10);
+  for (let t of trail) {
+    stroke(t.color);
+    line(t.x1, t.y1, t.x2, t.y2);
+  }
+
   // Draw the circle
   fill(0, 0, 255, 150); // Semi-transparent blue
   noStroke();
@@ -43,20 +53,38 @@ function draw() {
 
   // Ensure at least one hand is detected
   if (hands.length > 0) {
+    let isCircleMoved = false;
+
     for (let hand of hands) {
       if (hand.confidence > 0.1) {
         // Draw keypoints and lines
         drawKeypointsAndLines(hand);
 
-        // Check if the index finger (keypoint 8) touches the circle
+        // Check if the thumb (keypoint 4) and index finger (keypoint 8) are pinching the circle
+        let thumb = hand.keypoints[4];
         let indexFinger = hand.keypoints[8];
-        let d = dist(indexFinger.x, indexFinger.y, circleX, circleY);
-        if (d < circleSize / 2) {
-          // Move the circle to the index finger's position
-          circleX = indexFinger.x;
-          circleY = indexFinger.y;
+        let dThumb = dist(thumb.x, thumb.y, circleX, circleY);
+        let dIndex = dist(indexFinger.x, indexFinger.y, circleX, circleY);
+
+        if (dThumb < circleSize / 2 && dIndex < circleSize / 2) {
+          // Move the circle to the midpoint between thumb and index finger
+          let prevX = circleX;
+          let prevY = circleY;
+          circleX = (thumb.x + indexFinger.x) / 2;
+          circleY = (thumb.y + indexFinger.y) / 2;
+
+          // Add the trail
+          let color = hand.handedness === "Left" ? color(0, 255, 0) : color(255, 0, 0);
+          trail.push({ x1: prevX, y1: prevY, x2: circleX, y2: circleY, color });
+
+          isCircleMoved = true;
         }
       }
+    }
+
+    // Stop drawing the trail if the circle is not being moved
+    if (!isCircleMoved) {
+      isDragging = false;
     }
   }
 }
